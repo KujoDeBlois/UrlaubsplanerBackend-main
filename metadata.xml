@@ -1,0 +1,28 @@
+<edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+  <edmx:DataServices>
+    <Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" Namespace="MyNamespace">
+      <EntityType Name="User">
+        <Key>
+          <PropertyRef Name="userId"/>
+        </Key>
+        <Property Name="userId" Type="Edm.Int32" Nullable="false" Unique="true"/>
+        <Property Name="username" Type="Edm.String"/>
+        <Property Name="vorname" Type="Edm.String"/>
+        <Property Name="nachname" Type="Edm.String"/>
+        <Property Name="note" Type="Edm.String"/>
+        <Property Name="passwort" Type="Edm.String"/>
+        <Property Name="gesUrlaub" Type="Edm.Int32"/>
+        <Property Name="createdAt" Type="Edm.String"/>
+        <Property Name="updatedAt" Type="Edm.String"/>
+        <Property Name="role" Type="Edm.String"/>
+        <Property Name="restUrlaub" Type="Edm.Int32"/>
+        <Property Name="gepUrlaubsTage" Type="Edm.Int32"/>
+        <Property Name="genUrlaubsTage" Type="Edm.Int32"/>
+      </EntityType>
+      <EntityContainer Name="MyEntityContainer"
+                      xmlns="http://docs.oasis-open.org/odata/ns/edm">
+        <EntitySet Name="UserSet" EntityType="Api.User"/>
+      </EntityContainer>
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>

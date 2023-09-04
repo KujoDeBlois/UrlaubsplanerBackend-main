@@ -21,6 +21,21 @@ const User = sequelize.define('User', {
   nachname: {
     type: Sequelize.STRING
   },
+  isAdmin: {
+    type: Sequelize.BOOLEAN
+  },
+  access: {
+    type: Sequelize.INTEGER
+  },
+  isHR: {
+    type: Sequelize.BOOLEAN
+  },
+  isSupervisor: {
+    type: Sequelize.BOOLEAN
+  },
+  isEmployee: {
+    type: Sequelize.BOOLEAN
+  },
   passwort: {
     type: Sequelize.STRING
   },

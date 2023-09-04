@@ -22,10 +22,10 @@ router.get('/api/userDetail', async (req, res) => {
         { user_id: username },
         "secret",
         {
-          expiresIn: "900000ms",
+          expiresIn: "9000030ms", 
         }
       );
-      console.log(user);
+      // console.log(user);
       user.dataValues.token = token;
       res.send({ "userId": user.dataValues.userId, "token" : user.dataValues.token });
     } else {
@@ -42,8 +42,8 @@ router.get('/api/userDetail', async (req, res) => {
 router.get('/api/userById', auth, async (req, res) => {
   try {
     var userId = req.query.userId;
-    console.log("Hier drunter sollte die ID stehebn:")
-    console.log(userId);
+    // console.log("Hier drunter sollte die ID stehebn:")
+    // console.log(userId);
     var user = await User.findByPk(userId);
     if (!userId) {
       res.status(404).send('Benutzer nicht gefunden');
@@ -78,7 +78,7 @@ router.get('/api/userById', auth, async (req, res) => {
 /*---Gebuchter Urlaub wird vom Fontend an das Backend gesendet und in die Datenbank geschrieben--- */
 router.post('/api/urlaub', auth, async (req, res) => {
   var data = req.body;
-  console.log(data);
+  // console.log(data);
   var newUrlaub = Urlaub.build({
     userId: data['oAppointment[userId]'],
     startDatum: data['oAppointment[start]'],
@@ -89,12 +89,12 @@ router.post('/api/urlaub', auth, async (req, res) => {
 
   newUrlaub.save()
     .then(() => {
-      // console.log('Urlaub wurde gespeichert.');
+      // // console.log('Urlaub wurde gespeichert.');
       res.status(200).send();
     })
 });
 
-router.put('/api/urlaub', auth, async (req, res) => {
+router.put('/api/urlaub', async (req, res) => {
   Urlaub.update({
     urlaubId: req.body.urlaubId,
     userId: req.body.userId,
@@ -105,7 +105,7 @@ router.put('/api/urlaub', auth, async (req, res) => {
   },
     { where: { urlaubId: req.body.urlaubId } })
     .then(() => {
-      console.log("Urlaub wurde aktualisiert");
+      // console.log("Urlaub wurde aktualisiert");
       res.send();
     })
     .catch((error) => {
@@ -165,17 +165,17 @@ router.get('/api/user', auth, async (req, res) => {
   var users = await User.findAll();
 
   users.forEach(user => {
-    // console.log(user);
+    // // console.log(user);
     var oTeam = cleanTeamArray.find(function (oEntry) {
       return oEntry.teamId === user.dataValues.teamId;
     });
+    if(oTeam){
     user.dataValues.teamName = oTeam.teamName;
+    }
   });
   if (users) {
     res.send({ users });
-    console.log("Hier drünter steht Günther!");
-    console.log(users);
-    console.error("Günther");
+    
   }
 });
 
@@ -183,6 +183,7 @@ router.get('/api/user', auth, async (req, res) => {
 /*---CreateNew User in DB--- */
 router.post('/api/user', auth, async (req, res) => {
   console.log("POST auf /api/user");
+  console.log(req.body);
   User.sync().then(() => {
     const newUser = User.build({
     username: req.body.username,
@@ -191,6 +192,12 @@ router.post('/api/user', auth, async (req, res) => {
     passwort: "ABC123",
     gesUrlaub: req.body.gesUrlaub,
     role: req.body.role,
+    access: req.body.access,
+    isAdmin: req.body.isAdmin,
+    isManager: req.body.isManager,
+    isSupervisor: req.body.isSupervisor,
+    isHR: req.body.isHR,
+    isEmployee: req.body.isEmployee,
     restUrlaub: req.body.restUrlaub,
     gepUrlaubsTage: req.body.gepUrlaubsTage,
     genUrlaubsTage: req.body.genUrlaubsTage,
@@ -199,7 +206,7 @@ router.post('/api/user', auth, async (req, res) => {
     })
     newUser.save()
       .then(() => {
-        console.log('User wurde gespeichert.');
+        // console.log('User wurde gespeichert.');
 
       })
       .catch((error) => {
@@ -210,7 +217,7 @@ router.post('/api/user', auth, async (req, res) => {
     //Zur Kontrolle
     User.findAll().then(user => {
 
-      console.log(user);
+      // console.log(user);
       res.send({ user });
     });
   });
@@ -220,8 +227,6 @@ router.post('/api/user', auth, async (req, res) => {
 
 /*---Update User in DB--- */
 router.put('/api/user', auth, async (req, res) => {
-  // Überprüfen, ob die angegebene teamId in der Team Tabelle vorhanden ist
-  console.log("PUT METHODE");
   if(req.body.teamId){
     const team = await Team.findByPk(req.body.teamId);
     if (!team) {
@@ -229,7 +234,21 @@ router.put('/api/user', auth, async (req, res) => {
       return;
     }
   }
-  console.log(req.body);
+  // console.log(req.body);
+  const oUser = await User.findByPk(req.body.userId);
+  console.log(oUser)
+  if(oUser.dataValues.isAdmin === "1"){
+    if (!req.body.isAdmin) {
+      const adminCount = await User.count({ where: { isAdmin: true } });
+      console.log("Es sind derzeit so viele Admins im System:")
+      console.log(adminCount)
+      if (adminCount <= 2) {
+        console.log("Es dürfen nicht weniger als 2 Admins im System sein!")
+        return;
+      }
+    }
+  }
+  
   // Aktualisiere den User mit den angegebenen Werten
   User.update({
     username: req.body.username,
@@ -237,7 +256,12 @@ router.put('/api/user', auth, async (req, res) => {
     nachname: req.body.nachname,
     passwort: req.body.passwort,
     gesUrlaub: req.body.gesUrlaub,
-    role: req.body.role,
+    access: req.body.access,
+    isAdmin: req.body.isAdmin,
+    isManager: req.body.isManager,
+    isHR: req.body.isHR,
+    isSupervisor: req.body.isSupervisor,
+    isEmployee: req.body.isEmployee,
     restUrlaub: req.body.restUrlaub,
     gepUrlaubsTage: req.body.gepUrlaubsTage,
     genUrlaubsTage: req.body.genUrlaubsTage,
@@ -246,7 +270,7 @@ router.put('/api/user', auth, async (req, res) => {
   },
     { where: { userId: req.body.userId } })
     .then(() => {
-      console.log("User aktualisiert");
+      // console.log("User aktualisiert");
       res.status("200").send('OK');
     })
     .catch((error) => {
@@ -259,16 +283,40 @@ router.put('/api/user', auth, async (req, res) => {
 
 /*---Mitarbeiter Löschen--- */
 router.delete('/api/user', auth, async (req, res) => {
-  console.log("Jesus");
-  console.log(req.body);
+  // console.log(req.body);
   var data = req.body.userId;
+  const oUser = await User.findByPk(req.body.userId);
   if (data) {
+
+    console.log(oUser)
+    if(oUser.dataValues.isAdmin === "1"){
+
+      const adminCount = await User.count({ where: { isAdmin: true } });
+      console.log("Es sind derzeit so viele Admins im System:")
+      console.log(adminCount)
+      if (adminCount <= 2) {
+        console.log("Es dürfen nicht weniger als 2 Admins im System sein!");
+        return;
+      } else {
+
+        console.log("norm del2")
+        await Urlaub.destroy({ where: { userId : data } });
+        await User.destroy({
+        where: { userId: req.body.userId }
+    })
+
+      }
+  } else {
+  
+    
+    console.log("norm del")
     await Urlaub.destroy({ where: { userId : data } });
     await User.destroy({
       where: { userId: req.body.userId }
     })
     
     res.send("Mitarbeiter wurde gelöscht.")
+  }
   }
 });
 
@@ -279,7 +327,7 @@ router.get('/api/urlaubTeam', auth, async (req, res) => {
   var userIdArray = [];
   var data = [];
   var userArrayClean =  [];
-  console.log("Anfrage auf TeamleiterID: " + teamLeiterId);
+  // console.log("Anfrage auf TeamleiterID: " + teamLeiterId);
   
   const TeamObject = await Team.findAll({
     where: { teamLeiterId: teamLeiterId },
@@ -293,7 +341,6 @@ router.get('/api/urlaubTeam', auth, async (req, res) => {
       userIdArray.push(user.dataValues.userId);
       userArrayClean.push(user.dataValues)
     })
-    console.log(userArrayClean);
     var urlaubsArray = await Urlaub.findAll({ where: { userId: userIdArray } });
     if (urlaubsArray) {
       urlaubsArray.forEach(urlaub => {
@@ -318,18 +365,15 @@ router.get('/api/urlaubTeam', auth, async (req, res) => {
 
 /* -------------------------------------------------------------------API/USERTEAM------------------------------------------------------------------------------------*/
 router.get('/api/userTeam', auth, async (req, res) => {
-  console.log(req.query);
+  // console.log(req.query);
   var teamLeiterId = req.query.teamLeiterId;
   var data = [];
 
-  console.log("Anfrage auf TeamleiterID: " + teamLeiterId);
   
   const TeamObject = await Team.findAll({
     where: { teamLeiterId: teamLeiterId },
   })
   if(TeamObject[0]){
-    console.log(TeamObject);
-
     const userArray = await User.findAll({
       where: { teamId: TeamObject[0].dataValues.teamId },
     });
@@ -374,7 +418,32 @@ router.get('/api/userTeam', auth, async (req, res) => {
 
 
 
-
+router.put('/api/Team', auth, async (req, res) => {
+  // Überprüfen, ob die angegebene teamId in der Team Tabelle vorhanden ist
+  // console.log("PUT METHODE");
+  if(req.body.teamId){
+    const team = await Team.findByPk(req.body.teamId);
+    if (!team) {
+      res.status(400).send('Ungültige teamId');
+      return;
+    }
+  }
+  // Aktualisiere das Team mit den angegebenen Werten
+  Team.update({
+    teamLeiterId: req.body.teamLeiterId,
+    teamName: req.body.teamName,
+    teamId: req.body.teamId
+  },
+    { where: { teamId: req.body.teamId } })
+    .then(() => {
+      // console.log("Team aktualisiert");
+      res.status("200").send('OK');
+    })
+    .catch((error) => {
+      console.error(error);
+      res.send({ error });
+    });
+});
 
 
 /*---Create Team in DB--- */
@@ -387,7 +456,7 @@ router.post('/api/Team', auth, async (req, res) => {
     })
     newTeam.save()
       .then(() => {
-        console.log('Team wurde gespeichert.');
+        // console.log('Team wurde gespeichert.');
 
       })
       .catch((error) => {
@@ -398,7 +467,7 @@ router.post('/api/Team', auth, async (req, res) => {
 
     Team.findAll().then(team => {
 
-      //console.log(team);
+      //// console.log(team);
       res.send({ team });
     });
   });
@@ -406,27 +475,22 @@ router.post('/api/Team', auth, async (req, res) => {
 
 /*---Team Löschen--- */
 router.delete('/api/Team', auth, async (req, res) => {
-  /*
-  Team.findAll({
-    where: {
-      teamLeiterId: 1 // oder andere ID
-    }
-  }).then(teams => {
-    console.log(teams);
-  });
- */
-  const { teamLeiterId } = req.body;
-  if (!teamLeiterId) {
-    return res.status(400).send("Es wurde keine teamLeiterId übergeben.");
+  const { teamId } = req.body;
+  // console.log(teamId)
+  // console.log("flubberwurst")
+  if (!teamId) {
+    return res.status(400).send("Es wurde keine teamId übergeben.");
   }
 
   try {
-    const affectedRows = await User.update({ teamLeiterId: null }, { where: { teamLeiterId } });
-    if (affectedRows > 0) {
-      await Team.destroy({ where: { teamLeiterId } });
-      res.send(`Team mit teamLeiterId ${teamLeiterId} wurde gelöscht.`);
-    } else {
-      res.status(404).send(`Es wurde kein Team mit teamLeiterId ${teamLeiterId} gefunden.`);
+    const affectedRows = await User.update({ teamId: null }, { where: { teamId } });
+    try {
+      await Team.destroy({ where: { teamId } });
+      res.send(`Team mit teamId ${teamId} wurde gelöscht.`);
+      
+    } catch (err) {
+      console.error(err);
+      res.status(404).send(`Es wurde kein Team mit teamId ${teamId} gefunden.`);
     }
   } catch (err) {
     console.error(err);
